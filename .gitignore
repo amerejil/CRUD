@@ -1,0 +1,22 @@
+.env
+frontend/node_modules
+
+#ignorar la carpeta y los archivos de vscode
+.vscode
+#ignoara la caperta /Backend/media
+backend/media
+
+vscode-profile.code-profile
+
+
+# Ignora todas las carpetas "migrations" y __pycache__ en todas las carpetas
+
+**/__pycache__/
+**/migrations/*
+
+# Pero permite rastrear solo el  archivo "__init__.py" en todas las carpetas "migrations"
+
+!**/migrations/__init__.py
+
+backend/static
+

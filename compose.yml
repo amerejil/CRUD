@@ -1,0 +1,76 @@
+services:
+  database:
+    container_name: "${PROJECT_NAME}_db"
+    image: postgres:alpine3.18
+    restart: always
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      PGUSER: ${DB_USER}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgresdb_test:/var/lib/postgresql/data/
+
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "pg_isready",
+          "-U",
+          "${DB_USER}",
+          "-d",
+          "${DB_NAME}",
+          "-h",
+          "localhost",
+          "-p",
+          "5432",
+        ]
+      interval: 1s
+      retries: 60
+  
+  django_server:
+    container_name: '${PROJECT_NAME}_server'
+    build: backend
+    image: '${PROJECT_NAME}_server'
+    command: python manage.py runserver 0.0.0.0:8000
+    depends_on:
+      database:
+          condition: service_healthy
+    volumes:
+      - './Backend/:/usr/src/app/'
+    ports:
+      - '${SERVER_PORT}:8000'
+    environment:
+            SERVER_PORT: ${SERVER_PORT}
+            DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY}
+            DB_ENGINE: ${DB_ENGINE}
+            DB_NAME: ${DB_NAME}
+            DB_USER: ${DB_USER}
+            DB_PASSWORD: ${DB_PASSWORD}
+            DB_PORT: ${DB_PORT}
+
+  react_client:
+    container_name: "${PROJECT_NAME}_client"
+    build: frontend
+    image: "${PROJECT_NAME}_client"
+    command: npm run dev
+    restart: always
+    depends_on:
+      - django_server
+    volumes:
+      - "./frontend/package.json:/app/package.json"
+      - "./frontend/public:/app/public/"
+      - "./frontend/src:/app/src/"
+      - "./frontend/vite.config.js:/app/vite.config.js"
+      - "./frontend/index.html:/app/index.html"
+     
+    ports:
+      - "${CLIENT_PORT}:${CLIENT_PORT}"
+
+    environment:
+      VITE_API_URL: ${API_URL}
+      VITE_CLIENT_PORT: ${CLIENT_PORT}
+volumes:
+  postgresdb_test:
